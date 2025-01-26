@@ -1,5 +1,5 @@
 import { db } from './firebase'
-import { doc, updateDoc, arrayUnion, arrayRemove, getDoc, setDoc } from 'firebase/firestore'
+import { doc, updateDoc, arrayUnion, arrayRemove, getDoc, setDoc, increment, writeBatch } from 'firebase/firestore'
 import { User } from 'firebase/auth'
 
 export async function toggleLike(videoId: string, user: User) {
@@ -14,13 +14,18 @@ export async function toggleLike(videoId: string, user: User) {
   const likes = likesDoc.data()?.users || []
   const isLiked = likes.includes(user.uid)
   
-  await updateDoc(likesRef, {
+  // Use a batch to ensure atomic updates
+  const batch = writeBatch(db)
+  
+  batch.update(likesRef, {
     users: isLiked ? arrayRemove(user.uid) : arrayUnion(user.uid)
   })
   
-  await updateDoc(videoRef, {
-    likes: isLiked ? likes.length - 1 : likes.length + 1
+  batch.update(videoRef, {
+    likes: increment(isLiked ? -1 : 1)
   })
+  
+  await batch.commit()
   
   return !isLiked
 }

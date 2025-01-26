@@ -7,7 +7,7 @@ import { showErrorToast, showSuccessToast } from '../Toast'
 import { formatTimeAgo, formatNumber } from '../../utils/formatters'
 import { Video } from '../../types/index'
 import { useNavigate, Link } from 'react-router-dom'
-import { collection, query, where, onSnapshot } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, doc, increment } from 'firebase/firestore'
 import { db } from '../../services/firebase'
 import { signInWithGoogle } from '../../services/firebase'
 import { fetchUserProfile } from '../../services/user'
@@ -28,7 +28,7 @@ export default function VideoCard({ video, isVisible }: VideoCardProps) {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [isLiked, setIsLiked] = useState(false)
-  const [likesCount, setLikesCount] = useState(video.likes)
+  const [likesCount, setLikesCount] = useState(video.likes || 0)
   const [commentsCount, setCommentsCount] = useState(video.comments)
   const [showComments, setShowComments] = useState(false)
   const [isMuted, setIsMuted] = useState(true)
@@ -69,6 +69,20 @@ export default function VideoCard({ video, isVisible }: VideoCardProps) {
     fetchUserProfile(video.userId).then(setUserData)
   }, [video.userId])
 
+  useEffect(() => {
+    setShowComments(false)
+  }, [video.id])
+
+  useEffect(() => {
+    const likesRef = doc(db, 'videos', video.id)
+    const unsubscribe = onSnapshot(likesRef, (doc) => {
+      const likes = doc.data()?.likes || 0
+      setLikesCount(likes)
+    })
+
+    return () => unsubscribe()
+  }, [video.id])
+
   const handleLike = async () => {
     if (!user) {
       showErrorToast('Please sign in to like videos')
@@ -78,9 +92,9 @@ export default function VideoCard({ video, isVisible }: VideoCardProps) {
     try {
       const newLikedState = await toggleLike(video.id, user)
       setIsLiked(newLikedState)
-      setLikesCount(prev => newLikedState ? prev + 1 : prev - 1)
     } catch (error) {
       showErrorToast('Failed to like video')
+      console.error('Like error:', error)
     }
   }
 
@@ -175,15 +189,12 @@ export default function VideoCard({ video, isVisible }: VideoCardProps) {
 
             {/* Action buttons */}
             <div className="absolute right-4 bottom-20 flex flex-col gap-4">
-              <button
+              <ActionButton
+                icon={<FiHeart className={`text-2xl ${isLiked ? 'fill-current text-primary-500' : ''}`} />}
+                label={likesCount}
                 onClick={handleLike}
-                className={`p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors ${
-                  isLiked ? 'text-primary-500 fill-current' : 'text-white'
-                }`}
-              >
-                <FiHeart size={24} className={isLiked ? 'fill-current' : ''} />
-                <span className="text-xs mt-1">{formatNumber(likesCount)}</span>
-              </button>
+                active={isLiked}
+              />
               <button
                 onClick={() => setShowComments(!showComments)}
                 className="p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors text-white"
@@ -226,16 +237,19 @@ export default function VideoCard({ video, isVisible }: VideoCardProps) {
   )
 }
 
-function ActionButton({ icon, label, onClick, active = false }: ActionButtonProps) {
-  return (
-    <button 
-      onClick={onClick}
-      className={`flex items-center gap-2 transition-all ${
-        active ? 'text-primary-500' : 'text-white/80 hover:text-white'
-      }`}
+const ActionButton = ({ icon, label, onClick, active = false }: ActionButtonProps) => (
+  <button
+    onClick={onClick}
+    className="flex flex-col items-center gap-1 transition-all"
+  >
+    <div className={`p-2 rounded-full transition-all transform 
+      ${active ? 'text-primary-500 scale-110 hover:bg-primary-500/20' : 
+      'text-white hover:text-primary-500 hover:scale-110 hover:bg-white/10'}`}
     >
-      <span className="text-xl">{icon}</span>
-      <span className="text-sm font-medium">{label}</span>
-    </button>
-  )
-} 
+      {icon}
+    </div>
+    <span className={`text-xs ${active ? 'text-primary-500' : 'text-gray-300'}`}>
+      {typeof label === 'number' ? formatNumber(label) : label}
+    </span>
+  </button>
+) 

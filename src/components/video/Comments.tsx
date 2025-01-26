@@ -6,6 +6,7 @@ import { formatTimeAgo } from '../../utils/formatters'
 import type { Comment } from '../../types/index'
 import { query, collection, where, orderBy, onSnapshot } from 'firebase/firestore'
 import { db } from '../../services/firebase'
+import { fetchUserProfile } from '../../services/user'
 
 interface CommentsProps {
   videoId: string
@@ -17,6 +18,7 @@ export default function Comments({ videoId }: CommentsProps) {
   const [newComment, setNewComment] = useState('')
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [usersData, setUsersData] = useState<{[key: string]: any}>({})
 
   useEffect(() => {
     const commentsQuery = query(
@@ -42,6 +44,17 @@ export default function Comments({ videoId }: CommentsProps) {
 
     return () => unsubscribe()
   }, [videoId])
+
+  useEffect(() => {
+    comments.forEach(comment => {
+      fetchUserProfile(comment.userId).then(userData => {
+        setUsersData(prev => ({
+          ...prev,
+          [comment.userId]: userData
+        }))
+      })
+    })
+  }, [comments])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -113,8 +126,8 @@ export default function Comments({ videoId }: CommentsProps) {
               <div key={comment.id} className="group animate-fade-up">
                 <div className="flex gap-3">
                   <img
-                    src={comment.userAvatar}
-                    alt={comment.userName}
+                    src={usersData[comment.userId]?.photoURL}
+                    alt={usersData[comment.userId]?.displayName}
                     className="w-8 h-8 rounded-full object-cover ring-2 ring-transparent 
                              group-hover:ring-primary-500/20 transition-all"
                   />
@@ -122,7 +135,7 @@ export default function Comments({ videoId }: CommentsProps) {
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-white text-sm hover:text-primary-500 
                                      transition-colors cursor-pointer">
-                        {comment.userName}
+                        {usersData[comment.userId]?.displayName}
                       </span>
                       <span className="text-xs text-gray-500">
                         {formatTimeAgo(comment.createdAt)}
