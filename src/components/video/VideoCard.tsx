@@ -10,6 +10,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '../../services/firebase'
 import { signInWithGoogle } from '../../services/firebase'
+import { fetchUserProfile } from '../../services/user'
 
 interface VideoCardProps {
   video: Video
@@ -33,6 +34,7 @@ export default function VideoCard({ video, isVisible }: VideoCardProps) {
   const [isMuted, setIsMuted] = useState(true)
   const [isPlaying, setIsPlaying] = useState(true)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const [userData, setUserData] = useState<any>(null)
 
   useEffect(() => {
     if (videoRef.current) {
@@ -62,6 +64,10 @@ export default function VideoCard({ video, isVisible }: VideoCardProps) {
 
     return () => unsubscribe()
   }, [video.id])
+
+  useEffect(() => {
+    fetchUserProfile(video.userId).then(setUserData)
+  }, [video.userId])
 
   const handleLike = async () => {
     if (!user) {
@@ -149,8 +155,8 @@ export default function VideoCard({ video, isVisible }: VideoCardProps) {
               <div className="flex items-center gap-3 mb-3">
                 <Link to={`/profile/${video.userId}`} className="group">
                   <img
-                    src={video.userAvatar}
-                    alt={video.userName}
+                    src={userData?.photoURL}
+                    alt={userData?.displayName}
                     className="w-10 h-10 rounded-full ring-2 ring-transparent group-hover:ring-primary-500 transition-all"
                   />
                 </Link>
@@ -159,7 +165,7 @@ export default function VideoCard({ video, isVisible }: VideoCardProps) {
                     onClick={() => navigate(`/profile/${video.userId}`)}
                     className="font-semibold text-white hover:text-primary-500 transition-colors"
                   >
-                    {video.userName}
+                    {userData?.displayName}
                   </button>
                   <p className="text-sm text-gray-300">{formatTimeAgo(video.createdAt)}</p>
                 </div>

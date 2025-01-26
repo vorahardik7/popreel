@@ -1,15 +1,13 @@
 import { db } from './firebase'
 import { collection, addDoc, query, where, orderBy, getDocs } from 'firebase/firestore'
 import { User } from 'firebase/auth'
-import { Comment } from '../types'
+import { Comment } from '../types/index'
 
 export async function addComment(videoId: string, text: string, user: User) {
   return addDoc(collection(db, 'comments'), {
     videoId,
     text,
     userId: user.uid,
-    userName: user.displayName,
-    userAvatar: user.photoURL,
     createdAt: Date.now()
   })
 }

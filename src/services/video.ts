@@ -2,7 +2,7 @@ import { db } from './firebase'
 import { collection, addDoc, query, orderBy, limit, getDocs, startAfter, where } from 'firebase/firestore'
 import { User } from 'firebase/auth'
 import { uploadToCloudinary } from './cloudinary'
-import { Video } from '../types'  // Only import, remove the interface definition
+import { Video } from '../types/index'  // Only import, remove the interface definition
 
 export async function uploadVideo(file: File, caption: string, user: User) {
   try {
@@ -15,8 +15,6 @@ export async function uploadVideo(file: File, caption: string, user: User) {
       thumbnail: cloudinaryData.thumbnail,
       caption,
       userId: user.uid,
-      userName: user.displayName,
-      userAvatar: user.photoURL,
       likes: 0,
       comments: 0,
       createdAt: Date.now(),
