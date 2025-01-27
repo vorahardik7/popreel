@@ -93,4 +93,21 @@ export async function fetchUserStats(userId: string) {
     likes: data.likes ?? 0,
     videos: data.videos ?? 0
   }
+}
+
+export async function fetchLikedVideos(userId: string): Promise<Video[]> {
+  const likesQuery = query(collection(db, 'likes'), where('users', 'array-contains', userId))
+  const likesSnapshot = await getDocs(likesQuery)
+  
+  const videoIds = likesSnapshot.docs.map(doc => doc.id)
+  
+  if (videoIds.length === 0) return []
+  
+  const videosQuery = query(collection(db, 'videos'), where('__name__', 'in', videoIds))
+  const videosSnapshot = await getDocs(videosQuery)
+  
+  return videosSnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  })) as Video[]
 } 

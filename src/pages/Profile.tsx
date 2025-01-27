@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useParams, useNavigate } from 'react-router-dom'
-import { fetchUserVideos, fetchUserStats, fetchUserProfile } from '../services/user'
+import { fetchUserVideos, fetchUserStats, fetchUserProfile, fetchLikedVideos } from '../services/user'
 import { Video } from '../types/index'
 import EditProfileModal from '../components/profile/EditProfileModal'
 import { FiVideo, FiHeart } from 'react-icons/fi'
@@ -21,22 +21,30 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState('videos')
   const [loading, setLoading] = useState(true)
   const [showEditProfile, setShowEditProfile] = useState(false)
+  const [likedVideos, setLikedVideos] = useState<Video[]>([])
 
   const isOwnProfile = !userId || (user && userId === user.uid)
 
   useEffect(() => {
     const loadUserData = async () => {
       try {
+        if (!user && !userId) {
+          navigate('/')
+          return
+        }
+
         const targetUserId = isOwnProfile ? user?.uid : userId
         if (!targetUserId) return
 
-        const [userVideos, userStats, userProfile] = await Promise.all([
+        const [userVideos, userStats, userProfile, userLikedVideos] = await Promise.all([
           fetchUserVideos(targetUserId),
           fetchUserStats(targetUserId),
-          !isOwnProfile ? fetchUserProfile(targetUserId) : null
+          !isOwnProfile ? fetchUserProfile(targetUserId) : null,
+          isOwnProfile ? fetchLikedVideos(targetUserId) : Promise.resolve([])
         ])
         
         setVideos(userVideos)
+        setLikedVideos(userLikedVideos)
         setStats({
           ...userStats,
           videos: userVideos.length
@@ -55,6 +63,12 @@ export default function Profile() {
 
     loadUserData()
   }, [user, userId, isOwnProfile, navigate])
+
+  useEffect(() => {
+    if (!user && !userId) {
+      navigate('/')
+    }
+  }, [user, userId, navigate])
 
   if (loading) {
     return (
@@ -128,7 +142,10 @@ export default function Profile() {
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {videos.map((video) => (
+                {activeTab === 'videos' && videos.map((video) => (
+                  <VideoThumbnail key={video.id} video={video} />
+                ))}
+                {activeTab === 'liked' && likedVideos.map((video) => (
                   <VideoThumbnail key={video.id} video={video} />
                 ))}
               </div>

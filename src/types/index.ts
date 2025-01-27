@@ -17,6 +17,7 @@ export interface Comment {
 export interface Video {
   id: string
   url: string
+  thumbnail: string
   caption: string
   userId: string
   userName: string
@@ -24,6 +25,10 @@ export interface Video {
   likes: number
   comments: number
   createdAt: number
+  duration: number
+  format: string
+  height: number
+  width: number
 }
 
 export interface UserProfile {
