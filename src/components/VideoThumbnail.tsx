@@ -46,7 +46,7 @@ export default function VideoThumbnail({ video }: VideoThumbnailProps) {
             <FiX size={24} />
           </button>
           <div className="w-[calc(100vh*9/16)] max-w-3xl">
-            <VideoCard video={video} isVisible={true} />
+            <VideoCard video={video} isVisible={true} showComments={false} setShowComments={() => {}} />
           </div>
         </div>
       )}

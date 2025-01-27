@@ -15,6 +15,8 @@ import { fetchUserProfile } from '../../services/user'
 interface VideoCardProps {
   video: Video
   isVisible: boolean
+  showComments: boolean
+  setShowComments: (show: boolean) => void
 }
 
 interface ActionButtonProps {
@@ -24,13 +26,12 @@ interface ActionButtonProps {
   active?: boolean
 }
 
-export default function VideoCard({ video, isVisible }: VideoCardProps) {
+export default function VideoCard({ video, isVisible, showComments, setShowComments }: VideoCardProps) {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [isLiked, setIsLiked] = useState(false)
   const [likesCount, setLikesCount] = useState(video.likes || 0)
   const [commentsCount, setCommentsCount] = useState(video.comments)
-  const [showComments, setShowComments] = useState(false)
   const [isMuted, setIsMuted] = useState(true)
   const [isPlaying, setIsPlaying] = useState(true)
   const videoRef = useRef<HTMLVideoElement>(null)

@@ -11,6 +11,7 @@ export default function VideoFeed() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [loading, setLoading] = useState(true)
   const [slideDirection, setSlideDirection] = useState<'up' | 'down' | null>(null)
+  const [showComments, setShowComments] = useState(false)
 
   const loadVideos = async () => {
     try {
@@ -29,9 +30,11 @@ export default function VideoFeed() {
     if (e.key === 'ArrowDown' && currentIndex < videos.length - 1) {
       setSlideDirection('down')
       setCurrentIndex(prev => prev + 1)
+      setShowComments(false)
     } else if (e.key === 'ArrowUp' && currentIndex > 0) {
       setSlideDirection('up')
       setCurrentIndex(prev => prev - 1)
+      setShowComments(false)
     }
   }, [currentIndex, videos.length])
 
@@ -60,6 +63,8 @@ export default function VideoFeed() {
           <VideoCard 
             video={video} 
             isVisible={index === currentIndex && !slideDirection?.includes('left') && !slideDirection?.includes('right')} 
+            showComments={showComments}
+            setShowComments={setShowComments}
           />
         </div>
       ))}
